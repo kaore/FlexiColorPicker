@@ -5,7 +5,7 @@
 (function(window, document, undefined) {
 
     var type = (window.SVGAngle || document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1") ? "SVG" : "VML"),
-        picker, slide, hueOffset = 15, svgNS = 'http://www.w3.org/2000/svg';
+      hueOffset = 15, svgNS = 'http://www.w3.org/2000/svg';
 
     // This HTML snippet is inserted into the innerHTML property of the passed color picker element
     // when the no-hassle call to ColorPicker() is used, i.e. ColorPicker(function(hex, hsv, rgb) { ... });
@@ -52,79 +52,6 @@
         for (; i < len; i++)
             el.appendChild(children[i]);
         return el;
-    }
-
-    /**
-     * Create slide and picker markup depending on the supported technology.
-     */
-    if (type == 'SVG') {
-
-        slide = $('svg', { xmlns: 'http://www.w3.org/2000/svg', version: '1.1', width: '100%', height: '100%' },
-                  [
-                      $('defs', {},
-                        $('linearGradient', { id: 'gradient-hsv', x1: '0%', y1: '100%', x2: '0%', y2: '0%'},
-                          [
-                              $('stop', { offset: '0%', 'stop-color': '#FF0000', 'stop-opacity': '1' }),
-                              $('stop', { offset: '13%', 'stop-color': '#FF00FF', 'stop-opacity': '1' }),
-                              $('stop', { offset: '25%', 'stop-color': '#8000FF', 'stop-opacity': '1' }),
-                              $('stop', { offset: '38%', 'stop-color': '#0040FF', 'stop-opacity': '1' }),
-                              $('stop', { offset: '50%', 'stop-color': '#00FFFF', 'stop-opacity': '1' }),
-                              $('stop', { offset: '63%', 'stop-color': '#00FF40', 'stop-opacity': '1' }),
-                              $('stop', { offset: '75%', 'stop-color': '#0BED00', 'stop-opacity': '1' }),
-                              $('stop', { offset: '88%', 'stop-color': '#FFFF00', 'stop-opacity': '1' }),
-                              $('stop', { offset: '100%', 'stop-color': '#FF0000', 'stop-opacity': '1' })
-                          ]
-                         )
-                       ),
-                      $('rect', { x: '0', y: '0', width: '100%', height: '100%', fill: 'url(#gradient-hsv)'})
-                  ]
-                 );
-
-        picker = $('svg', { xmlns: 'http://www.w3.org/2000/svg', version: '1.1', width: '100%', height: '100%' },
-                   [
-                       $('defs', {},
-                         [
-                             $('linearGradient', { id: 'gradient-black', x1: '0%', y1: '100%', x2: '0%', y2: '0%'},
-                               [
-                                   $('stop', { offset: '0%', 'stop-color': '#000000', 'stop-opacity': '1' }),
-                                   $('stop', { offset: '100%', 'stop-color': '#CC9A81', 'stop-opacity': '0' })
-                               ]
-                              ),
-                             $('linearGradient', { id: 'gradient-white', x1: '0%', y1: '100%', x2: '100%', y2: '100%'},
-                               [
-                                   $('stop', { offset: '0%', 'stop-color': '#FFFFFF', 'stop-opacity': '1' }),
-                                   $('stop', { offset: '100%', 'stop-color': '#CC9A81', 'stop-opacity': '0' })
-                               ]
-                              )
-                         ]
-                        ),
-                       $('rect', { x: '0', y: '0', width: '100%', height: '100%', fill: 'url(#gradient-white)'}),
-                       $('rect', { x: '0', y: '0', width: '100%', height: '100%', fill: 'url(#gradient-black)'})
-                   ]
-                  );
-
-    } else if (type == 'VML') {
-        slide = [
-            '<DIV style="position: relative; width: 100%; height: 100%">',
-            '<v:rect style="position: absolute; top: 0; left: 0; width: 100%; height: 100%" stroked="f" filled="t">',
-            '<v:fill type="gradient" method="none" angle="0" color="red" color2="red" colors="8519f fuchsia;.25 #8000ff;24903f #0040ff;.5 aqua;41287f #00ff40;.75 #0bed00;57671f yellow"></v:fill>',
-            '</v:rect>',
-            '</DIV>'
-        ].join('');
-
-        picker = [
-            '<DIV style="position: relative; width: 100%; height: 100%">',
-            '<v:rect style="position: absolute; left: -1px; top: -1px; width: 101%; height: 101%" stroked="f" filled="t">',
-            '<v:fill type="gradient" method="none" angle="270" color="#FFFFFF" opacity="100%" color2="#CC9A81" o:opacity2="0%"></v:fill>',
-            '</v:rect>',
-            '<v:rect style="position: absolute; left: 0px; top: 0px; width: 100%; height: 101%" stroked="f" filled="t">',
-            '<v:fill type="gradient" method="none" angle="0" color="#000000" opacity="100%" color2="#CC9A81" o:opacity2="0%"></v:fill>',
-            '</v:rect>',
-            '</DIV>'
-        ].join('');
-        
-        if (!document.namespaces['v'])
-            document.namespaces.add('v', 'urn:schemas-microsoft-com:vml', '#default#VML');
     }
 
     /**
@@ -229,6 +156,8 @@
         this.s = 1;
         this.v = 1;
 
+        this.createElements();
+
         if (!callback) {
             // call of the form ColorPicker(element, funtion(hex, hsv, rgb) { ... }), i.e. the no-hassle call.
 
@@ -261,15 +190,15 @@
             // Generate uniq IDs for linearGradients so that we don't have the same IDs within one document.
             // Then reference those gradients in the associated rectangles.
             
-            var hsvGradient = slide.getElementById('gradient-hsv');
+            var hsvGradient = this.slide.getElementById('gradient-hsv');
             
-            var hsvRect = slide.getElementsByTagName('rect')[0];
+            var hsvRect = this.slide.getElementsByTagName('rect')[0];
             
             hsvGradient.id = 'gradient-hsv-' + uniqID;
             hsvRect.setAttribute('fill', 'url(#' + hsvGradient.id + ')');
 
-            var blackAndWhiteGradients = [picker.getElementById('gradient-black'), picker.getElementById('gradient-white')];
-            var whiteAndBlackRects = picker.getElementsByTagName('rect');
+            var blackAndWhiteGradients = [this.picker.getElementById('gradient-black'), this.picker.getElementById('gradient-white')];
+            var whiteAndBlackRects = this.picker.getElementsByTagName('rect');
             
             blackAndWhiteGradients[0].id = 'gradient-black-' + uniqID;
             blackAndWhiteGradients[1].id = 'gradient-white-' + uniqID;
@@ -277,15 +206,15 @@
             whiteAndBlackRects[0].setAttribute('fill', 'url(#' + blackAndWhiteGradients[1].id + ')');
             whiteAndBlackRects[1].setAttribute('fill', 'url(#' + blackAndWhiteGradients[0].id + ')');
 
-            this.slideElement.appendChild(slide.cloneNode(true));
-            this.pickerElement.appendChild(picker.cloneNode(true));
+            this.slideElement.appendChild(this.slide.cloneNode(true));
+            this.pickerElement.appendChild(this.picker.cloneNode(true));
 
             uniqID++;
             
         } else {
             
-            this.slideElement.innerHTML = slide;
-            this.pickerElement.innerHTML = picker;            
+            this.slideElement.innerHTML = this.slide;
+            this.pickerElement.innerHTML = this.picker;            
         }
 
         addEventListener(this.slideElement, 'click', slideListener(this, this.slideElement, this.pickerElement));
@@ -410,6 +339,84 @@
         return setColor(this, ColorPicker.hex2hsv(hex), undefined, hex);
     };
 
+
+    /**
+     * Create slide and picker markup depending on the supported technology.
+     */
+    ColorPicker.prototype.createElements = function() {
+
+      if (type == 'SVG') {
+
+          this.slide = $('svg', { xmlns: 'http://www.w3.org/2000/svg', version: '1.1', width: '100%', height: '100%' },
+                    [
+                        $('defs', {},
+                          $('linearGradient', { id: 'gradient-hsv', x1: '0%', y1: '100%', x2: '0%', y2: '0%'},
+                            [
+                                $('stop', { offset: '0%', 'stop-color': '#FF0000', 'stop-opacity': '1' }),
+                                $('stop', { offset: '13%', 'stop-color': '#FF00FF', 'stop-opacity': '1' }),
+                                $('stop', { offset: '25%', 'stop-color': '#8000FF', 'stop-opacity': '1' }),
+                                $('stop', { offset: '38%', 'stop-color': '#0040FF', 'stop-opacity': '1' }),
+                                $('stop', { offset: '50%', 'stop-color': '#00FFFF', 'stop-opacity': '1' }),
+                                $('stop', { offset: '63%', 'stop-color': '#00FF40', 'stop-opacity': '1' }),
+                                $('stop', { offset: '75%', 'stop-color': '#0BED00', 'stop-opacity': '1' }),
+                                $('stop', { offset: '88%', 'stop-color': '#FFFF00', 'stop-opacity': '1' }),
+                                $('stop', { offset: '100%', 'stop-color': '#FF0000', 'stop-opacity': '1' })
+                            ]
+                           )
+                         ),
+                        $('rect', { x: '0', y: '0', width: '100%', height: '100%', fill: 'url(#gradient-hsv)'})
+                    ]
+                   );
+
+          this.picker = $('svg', { xmlns: 'http://www.w3.org/2000/svg', version: '1.1', width: '100%', height: '100%' },
+                     [
+                         $('defs', {},
+                           [
+                               $('linearGradient', { id: 'gradient-black', x1: '0%', y1: '100%', x2: '0%', y2: '0%'},
+                                 [
+                                     $('stop', { offset: '0%', 'stop-color': '#000000', 'stop-opacity': '1' }),
+                                     $('stop', { offset: '100%', 'stop-color': '#CC9A81', 'stop-opacity': '0' })
+                                 ]
+                                ),
+                               $('linearGradient', { id: 'gradient-white', x1: '0%', y1: '100%', x2: '100%', y2: '100%'},
+                                 [
+                                     $('stop', { offset: '0%', 'stop-color': '#FFFFFF', 'stop-opacity': '1' }),
+                                     $('stop', { offset: '100%', 'stop-color': '#CC9A81', 'stop-opacity': '0' })
+                                 ]
+                                )
+                           ]
+                          ),
+                         $('rect', { x: '0', y: '0', width: '100%', height: '100%', fill: 'url(#gradient-white)'}),
+                         $('rect', { x: '0', y: '0', width: '100%', height: '100%', fill: 'url(#gradient-black)'})
+                     ]
+                    );
+
+      } else if (type == 'VML') {
+          this.slide = [
+              '<DIV style="position: relative; width: 100%; height: 100%">',
+              '<v:rect style="position: absolute; top: 0; left: 0; width: 100%; height: 100%" stroked="f" filled="t">',
+              '<v:fill type="gradient" method="none" angle="0" color="red" color2="red" colors="8519f fuchsia;.25 #8000ff;24903f #0040ff;.5 aqua;41287f #00ff40;.75 #0bed00;57671f yellow"></v:fill>',
+              '</v:rect>',
+              '</DIV>'
+          ].join('');
+
+          this.picker = [
+              '<DIV style="position: relative; width: 100%; height: 100%">',
+              '<v:rect style="position: absolute; left: -1px; top: -1px; width: 101%; height: 101%" stroked="f" filled="t">',
+              '<v:fill type="gradient" method="none" angle="270" color="#FFFFFF" opacity="100%" color2="#CC9A81" o:opacity2="0%"></v:fill>',
+              '</v:rect>',
+              '<v:rect style="position: absolute; left: 0px; top: 0px; width: 100%; height: 101%" stroked="f" filled="t">',
+              '<v:fill type="gradient" method="none" angle="0" color="#000000" opacity="100%" color2="#CC9A81" o:opacity2="0%"></v:fill>',
+              '</v:rect>',
+              '</DIV>'
+          ].join('');
+          
+          if (!document.namespaces['v'])
+              document.namespaces.add('v', 'urn:schemas-microsoft-com:vml', '#default#VML');
+      }
+    }
+
+
     /**
      * Helper to position indicators.
      * @param {HTMLElement} slideIndicator DOM element representing the indicator of the slide area.
@@ -439,6 +446,11 @@
         pickerIndicator.style.pointerEvents = 'none';
         slideIndicator.style.pointerEvents = 'none';
     };
+
+
+    
+
+
 
     window.ColorPicker = ColorPicker;
 
