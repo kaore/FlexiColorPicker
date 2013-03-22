@@ -414,7 +414,7 @@
           if (!document.namespaces['v'])
               document.namespaces.add('v', 'urn:schemas-microsoft-com:vml', '#default#VML');
       }
-    }
+    };
 
 
     /**
